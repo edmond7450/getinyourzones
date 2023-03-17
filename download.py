@@ -56,80 +56,71 @@ def login(driver):
 
 def get_page_urls(driver):
     start = True
-    while True:
+    try:
+        WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//*[@class="top_menu"]')))
+    except:
+        pass
+
+    category_urls = []
+    categories = []
+    # ele_categories = driver.find_elements(By.XPATH, '//*[@class="top_menu"]//a')
+    # for ele_category in ele_categories:
+    #     category_url = ele_category.get_attribute('href')
+    #     if category_url and category_url not in category_urls and (category_url.find('/categories/') > 0 or category_url.find('/catalog/') > 0):
+    #         category_urls.append(category_url)
+    #         category = ele_category.get_attribute('text').strip()
+    #         categories.append([category, category_url])
+    categories = [['CYCLE DU MOMENT - DU 06/03 AU 02/04', 'https://getinyourzones.com/categories/programme-du-moment'],
+                  ['100% des programmes guidés', 'https://getinyourzones.com/categories/programmation']]
+
+    for category, category_url in categories:
+        driver.get(category_url)
         try:
-            WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, '//*[@class="top_menu"]')))
-        except:
-            pass
+            last_height = driver.execute_script("return document.body.scrollHeight")
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(3)
+            new_height = driver.execute_script("return document.body.scrollHeight")
 
-        category_urls = []
-        categories = []
-        ele_categories = driver.find_elements(By.XPATH, '//*[@class="top_menu"]//a')
-        for ele_category in ele_categories:
-            category_url = ele_category.get_attribute('href')
-            if category_url and category_url not in category_urls and (category_url.find('/categories/') > 0 or category_url.find('/catalog/') > 0):
-                category_urls.append(category_url)
-                category = ele_category.get_attribute('text').strip()
-                categories.append([category, category_url])
-
-        for category, category_url in categories:
-            driver.get(category_url)
-            try:
-                last_height = driver.execute_script("return document.body.scrollHeight")
+            while new_height != last_height:
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 time.sleep(3)
+                last_height = new_height
                 new_height = driver.execute_script("return document.body.scrollHeight")
+        except:
+            break
 
-                while new_height != last_height:
-                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                    time.sleep(3)
-                    last_height = new_height
-                    new_height = driver.execute_script("return document.body.scrollHeight")
-            except:
-                break
-
-            contents = []
-            if category_url.find('/categories/') > 0:
-                results = driver.find_elements(By.XPATH, '//*[@id="category_content"]/div')
-            elif category_url.find('/catalog/') > 0:
-                results = driver.find_elements(By.XPATH, '//*[@id="catalog_content"]/div')
+        contents = []
+        if category_url.find('/categories/') > 0:
+            results = driver.find_elements(By.XPATH, '//*[@id="category_content"]/div')
+        elif category_url.find('/catalog/') > 0:
+            results = driver.find_elements(By.XPATH, '//*[@id="catalog_content"]/div')
+        else:
+            results = []
+        for result in results:
+            data_card = result.get_attribute('data-card')
+            if data_card.find('collection') > -1:
+                card_type = 'collection'
+            elif data_card.find('video') > -1:
+                card_type = 'video'
             else:
-                results = []
-            for result in results:
-                data_card = result.get_attribute('data-card')
-                if data_card.find('collection') > -1:
-                    card_type = 'collection'
-                elif data_card.find('video') > -1:
-                    card_type = 'video'
-                else:
-                    card_type = ''
+                card_type = ''
 
-                ele_card = result.find_element(By.XPATH, './/a[@class="card-title"]')
-                card_title = ele_card.text
-                card_url = ele_card.get_attribute('href')
+            ele_card = result.find_element(By.XPATH, './/a[@class="card-title"]')
+            card_title = ele_card.text
+            card_url = ele_card.get_attribute('href')
 
-                contents.append([card_type, card_title, card_url])
+            contents.append([card_type, card_title, card_url])
 
-            for card_type, card_title, card_url in contents:
-                if card_type == 'collection':
-                    driver.get(card_url)
-                    time.sleep(3)
+        for card_type, card_title, card_url in contents:
+            if card_type == 'collection':
+                driver.get(card_url)
+                time.sleep(3)
 
-                    items = driver.find_elements(By.XPATH, '//*[@data-area="chapters"]//a[contains(@href, "/programs/")]')
-                    for item in items:
-                        sub_title = item.find_element(By.XPATH, './/*[@data-area="title"]').text
-                        url = item.get_attribute('href')
+                items = driver.find_elements(By.XPATH, '//*[@data-area="chapters"]//a[contains(@href, "/programs/")]')
+                for item in items:
+                    sub_title = item.find_element(By.XPATH, './/*[@data-area="title"]').text
+                    url = item.get_attribute('href')
 
-                        if start == True:
-                            mode = 'w'
-                            start = False
-                        else:
-                            mode = 'a+'
-
-                        with open('page_urls.csv', mode, encoding='utf-8') as of:
-                            of.write(','.join([category, card_title, sub_title, url]) + '\n')
-
-                else:
                     if start == True:
                         mode = 'w'
                         start = False
@@ -137,7 +128,17 @@ def get_page_urls(driver):
                         mode = 'a+'
 
                     with open('page_urls.csv', mode, encoding='utf-8') as of:
-                        of.write(','.join([category, card_title, '', card_url]) + '\n')
+                        of.write(','.join([category, card_title, sub_title, url]) + '\n')
+
+            else:
+                if start == True:
+                    mode = 'w'
+                    start = False
+                else:
+                    mode = 'a+'
+
+                with open('page_urls.csv', mode, encoding='utf-8') as of:
+                    of.write(','.join([category, card_title, '', card_url]) + '\n')
 
 
 def get_video_urls(driver):
