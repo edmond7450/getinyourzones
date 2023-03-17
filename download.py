@@ -147,21 +147,25 @@ def get_video_urls(driver):
 
     start = True
     for line in lines:
-        url = line.strip().split(',')[-1]
-        driver.get(url)
-        time.sleep(3)
+        try:
+            url = line.strip().split(',')[-1]
+            driver.get(url)
+            time.sleep(3)
 
-        ele_video = driver.find_element(By.XPATH, '//*[@id="program_player"]//video/source')
-        video_url = ele_video.get_attribute('src')
+            ele_video = driver.find_element(By.XPATH, '//*[@id="program_player"]//video/source')
+            video_url = ele_video.get_attribute('src')
 
-        if start == True:
-            mode = 'w'
-            start = False
-        else:
-            mode = 'a+'
+            if start == True:
+                mode = 'w'
+                start = False
+            else:
+                mode = 'a+'
 
-        with open('video_urls.csv', mode, encoding='utf-8') as of:
-            of.write(line.strip() + ',' + video_url + '\n')
+            with open('video_urls.csv', mode, encoding='utf-8') as of:
+                of.write(line.strip() + ',' + video_url + '\n')
+
+        except:
+            pass
 
 
 def download_video():
