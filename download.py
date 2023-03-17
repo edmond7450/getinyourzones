@@ -61,8 +61,8 @@ def get_page_urls(driver):
     except:
         pass
 
-    category_urls = []
-    categories = []
+    # category_urls = []
+    # categories = []
     # ele_categories = driver.find_elements(By.XPATH, '//*[@class="top_menu"]//a')
     # for ele_category in ele_categories:
     #     category_url = ele_category.get_attribute('href')
@@ -107,6 +107,8 @@ def get_page_urls(driver):
 
             ele_card = result.find_element(By.XPATH, './/a[@class="card-title"]')
             card_title = ele_card.text
+            if card_title.find(',') > 0:
+                card_title = f'"{card_title}"'
             card_url = ele_card.get_attribute('href')
 
             contents.append([card_type, card_title, card_url])
@@ -119,6 +121,8 @@ def get_page_urls(driver):
                 items = driver.find_elements(By.XPATH, '//*[@data-area="chapters"]//a[contains(@href, "/programs/")]')
                 for item in items:
                     sub_title = item.find_element(By.XPATH, './/*[@data-area="title"]').text
+                    if sub_title.find(',') > 0:
+                        sub_title = f'"{sub_title}"'
                     url = item.get_attribute('href')
 
                     if start == True:
