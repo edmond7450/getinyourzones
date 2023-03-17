@@ -217,11 +217,11 @@ def main():
 
         get_video_urls(driver)
 
-        download_video()
-
         driver.close()
         driver.quit()
         driver = None
+
+        download_video()
 
     except Exception as e:
         print(repr(e))
