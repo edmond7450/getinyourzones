@@ -1,3 +1,5 @@
+m3u8_To_MP4
+pathvalidate
 pyvirtualdisplay
 selenium
 webdriver-manager

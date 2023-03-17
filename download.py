@@ -1,6 +1,8 @@
+import m3u8_To_MP4
 import os.path
 import time
 
+from pathvalidate import sanitize_filename
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -52,7 +54,7 @@ def login(driver):
     return False
 
 
-def get_urls(driver):
+def get_page_urls(driver):
     start = True
     while True:
         try:
@@ -124,7 +126,7 @@ def get_urls(driver):
                         else:
                             mode = 'a+'
 
-                        with open('video_urls.csv', mode, encoding='utf-8') as of:
+                        with open('page_urls.csv', mode, encoding='utf-8') as of:
                             of.write(','.join([category, card_title, sub_title, url]) + '\n')
 
                 else:
@@ -134,8 +136,54 @@ def get_urls(driver):
                     else:
                         mode = 'a+'
 
-                    with open('video_urls.csv', mode, encoding='utf-8') as of:
+                    with open('page_urls.csv', mode, encoding='utf-8') as of:
                         of.write(','.join([category, card_title, '', card_url]) + '\n')
+
+
+def get_video_urls(driver):
+    with open('page_urls.csv', 'r', encoding='utf-8') as of:
+        lines = of.readlines()
+
+    start = True
+    for line in lines:
+        url = line.strip().split(',')[-1]
+        driver.get(url)
+        time.sleep(3)
+
+        ele_video = driver.find_element(By.XPATH, '//*[@id="program_player"]//video/source')
+        video_url = ele_video.get_attribute('src')
+
+        if start == True:
+            mode = 'w'
+            start = False
+        else:
+            mode = 'a+'
+
+        with open('video_urls.csv', mode, encoding='utf-8') as of:
+            of.write(line.strip() + ',' + video_url + '\n')
+
+
+def download_video():
+    with open('video_urls.csv', 'r', encoding='utf-8') as of:
+        lines = of.readlines()
+
+    for line in lines:
+        patterns = line.strip().split(',')
+
+        if patterns[2]:
+            dir_name = 'videos/' + sanitize_filename(patterns[0]) + '/' + sanitize_filename(patterns[1]) + '/'
+            mp4_file_name = sanitize_filename(patterns[2]) + '.mp4'
+        else:
+            dir_name = 'videos/' + sanitize_filename(patterns[0]) + '/'
+            mp4_file_name = sanitize_filename(patterns[1]) + '.mp4'
+
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+
+        try:
+            m3u8_To_MP4.multithread_download(patterns[-1], mp4_file_dir=dir_name, mp4_file_name=mp4_file_name)
+        except Exception as e:
+            print(repr(e))
 
 
 def main():
@@ -164,7 +212,11 @@ def main():
 
         login(driver)
 
-        get_urls(driver)
+        get_page_urls(driver)
+
+        get_video_urls(driver)
+
+        download_video()
 
         driver.close()
         driver.quit()
