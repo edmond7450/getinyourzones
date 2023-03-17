@@ -1,5 +1,4 @@
 import os.path
-import requests
 import time
 
 from pyvirtualdisplay import Display
@@ -66,8 +65,7 @@ def get_urls(driver):
         ele_categories = driver.find_elements(By.XPATH, '//*[@class="top_menu"]//a')
         for ele_category in ele_categories:
             category_url = ele_category.get_attribute('href')
-            # if category_url and category_url not in category_urls and (category_url.find('/categories/') > 0 or category_url.find('/catalog/') > 0):
-            if category_url and category_url not in category_urls and category_url.find('/catalog/') > 0:
+            if category_url and category_url not in category_urls and (category_url.find('/categories/') > 0 or category_url.find('/catalog/') > 0):
                 category_urls.append(category_url)
                 category = ele_category.get_attribute('text').strip()
                 categories.append([category, category_url])
