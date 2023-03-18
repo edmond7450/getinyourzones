@@ -1,8 +1,9 @@
+import argparse
 import m3u8_To_MP4
 import os.path
 import time
 
-from pathvalidate import sanitize_filename
+from pathvalidate import sanitize_filename, sanitize_filepath
 from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -176,60 +177,84 @@ def download_video():
     with open('video_urls.csv', 'r', encoding='utf-8') as of:
         lines = of.readlines()
 
+    tmpdir = None
+    # tmpdir = 'tmpdir'
+    # if not os.path.exists(tmpdir):
+    #     os.makedirs(tmpdir)
+
     for line in lines:
         patterns = line.strip().split(',')
 
+        if patterns[-1].find('?token=') == -1:
+            continue
+
         if patterns[2]:
-            dir_name = 'videos/' + sanitize_filename(patterns[0]) + '/' + sanitize_filename(patterns[1]) + '/'
+            dir_name = sanitize_filepath('videos/' + sanitize_filename(patterns[0]) + '/' + sanitize_filename(patterns[1]))
             mp4_file_name = sanitize_filename(patterns[2]) + '.mp4'
         else:
-            dir_name = 'videos/' + sanitize_filename(patterns[0]) + '/'
+            dir_name = sanitize_filepath('videos/' + sanitize_filename(patterns[0]))
             mp4_file_name = sanitize_filename(patterns[1]) + '.mp4'
+
+        if os.path.exists(dir_name + '/' + mp4_file_name):
+            continue
 
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
 
         try:
-            m3u8_To_MP4.multithread_download(patterns[-1], mp4_file_dir=dir_name, mp4_file_name=mp4_file_name)
+            m3u8_To_MP4.multithread_download(patterns[-1], mp4_file_dir=dir_name, mp4_file_name=mp4_file_name, tmpdir=tmpdir)
+        except FileNotFoundError as e:
+            print('FileNotFoundError:' + e.filename)
+            m3u8_To_MP4.multithread_download(patterns[-1], mp4_file_dir=dir_name, mp4_file_name=mp4_file_name, tmpdir=tmpdir)
         except Exception as e:
-            print(repr(e))
+            pass
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--pages', action='store_true', help="Get the page URLs and Output the result to page_urls.csv")
+    parser.add_argument('--videos', action='store_true', help="Get the video URLs from page_urls.csv and Output the result to video_urls.csv")
+    parser.add_argument('--download', action='store_true', help="Download the video files from video_urls.csv")
+    args = parser.parse_args()
+
     driver = None
     try:
-        chrome_options = Options()
-        chrome_options.add_argument("window-size=1250,1000")
-        chrome_options.add_argument("--disable-notifications")
-        chrome_options.add_argument("--no-sandbox")
-        user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'
-        chrome_options.add_argument(f'Upgrade-Insecure-Requests=1')
-        chrome_options.add_argument(f'user-agent={user_agent}')
-        chrome_options.add_argument('--verbose')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-software-rasterizer')
+        if args.pages or args.videos:
+            chrome_options = Options()
+            chrome_options.add_argument("window-size=1250,1000")
+            chrome_options.add_argument("--disable-notifications")
+            chrome_options.add_argument("--no-sandbox")
+            user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36'
+            chrome_options.add_argument(f'Upgrade-Insecure-Requests=1')
+            chrome_options.add_argument(f'user-agent={user_agent}')
+            chrome_options.add_argument('--verbose')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--disable-software-rasterizer')
 
-        if platform == "win32" or platform == "win64":
-            data_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'selenium')
-            chrome_options.add_argument(f"--user-data-dir={data_dir}")
-            # chrome_options.add_argument("--headless")
+            if platform == "win32" or platform == "win64":
+                data_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'selenium')
+                chrome_options.add_argument(f"--user-data-dir={data_dir}")
+                # chrome_options.add_argument("--headless")
 
-        driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+            driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
 
-        print("Start! : " + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))
-        time.sleep(1)
+            print("Start! : " + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))
+            time.sleep(1)
 
-        login(driver)
+            login(driver)
 
-        get_page_urls(driver)
+            if args.pages:
+                get_page_urls(driver)
 
-        get_video_urls(driver)
+            if args.videos:
+                get_video_urls(driver)
 
-        driver.close()
-        driver.quit()
-        driver = None
+            driver.close()
+            driver.quit()
+            driver = None
 
-        download_video()
+        else:
+            download_video()
 
     except Exception as e:
         print(repr(e))
