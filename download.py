@@ -177,10 +177,9 @@ def download_video():
     with open('video_urls.csv', 'r', encoding='utf-8') as of:
         lines = of.readlines()
 
-    tmpdir = None
-    # tmpdir = 'tmpdir'
-    # if not os.path.exists(tmpdir):
-    #     os.makedirs(tmpdir)
+    tmpdir = 'tmpdir'
+    if not os.path.exists(tmpdir):
+        os.makedirs(tmpdir)
 
     for line in lines:
         patterns = line.strip().split(',')
@@ -205,7 +204,6 @@ def download_video():
             m3u8_To_MP4.multithread_download(patterns[-1], mp4_file_dir=dir_name, mp4_file_name=mp4_file_name, tmpdir=tmpdir)
         except FileNotFoundError as e:
             print('FileNotFoundError:' + e.filename)
-            m3u8_To_MP4.multithread_download(patterns[-1], mp4_file_dir=dir_name, mp4_file_name=mp4_file_name, tmpdir=tmpdir)
         except Exception as e:
             pass
 
