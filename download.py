@@ -71,8 +71,8 @@ def get_page_urls(driver):
     #         category_urls.append(category_url)
     #         category = ele_category.get_attribute('text').strip()
     #         categories.append([category, category_url])
-    categories = [['CYCLE DU MOMENT - DU 06/03 AU 02/04', 'https://getinyourzones.com/categories/programme-du-moment'],
-                  ['100% des programmes guidés', 'https://getinyourzones.com/categories/programmation']]
+    categories = [['100% des programmes guidés', 'https://getinyourzones.com/categories/programmation'],
+                  ['Reprise du sport', 'https://getinyourzones.com/categories/reprise']]
 
     for category, category_url in categories:
         driver.get(category_url)
